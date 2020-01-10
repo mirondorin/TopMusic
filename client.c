@@ -99,6 +99,9 @@ int main (int argc, char *argv[])
                         perror ("[client]Eroare la read() de la server.\n");
                         return errno;
                     }
+                    else{
+                      write(sd, "1", 1);
+                    }
                     /* afisam mesajul primit */
                     printf ("[client]Mesajul primit este: %s", buf);
                     if (i % 4 == 0) printf("\n");
@@ -110,7 +113,41 @@ int main (int argc, char *argv[])
                     perror ("[client]Eroare la read() de la server.\n");
                     return errno;
                 }
-                printf ("[client]Mesajul primit este: %s\n", buf);
+                printf ("%s", buf);
+                
+                char name[50],description[200];
+                
+                read(0, name, sizeof(name));
+                
+                //Send name for song to server
+                if (write (sd,&name,sizeof(name)) <= 0)
+                {
+                    perror ("[client]Eroare la write() spre server.\n");
+                    return errno;
+                }
+                
+                if (read (sd, &buf,sizeof(buf)) < 0)
+                {
+                    perror ("[client]Eroare la read() de la server.\n");
+                    return errno;
+                }
+                printf ("\n%s", buf);
+                
+                read(0, description, sizeof(description));
+                
+                if (write (sd,&description,sizeof(description)) <= 0)
+                {
+                    perror ("[client]Eroare la write() spre server.\n");
+                    return errno;
+                }
+                
+                if (read (sd, &buf,sizeof(buf)) < 0)
+                {
+                    perror ("[client]Eroare la read() de la server.\n");
+                    return errno;
+                }
+                printf ("\n%s", buf);
+                
                 break;
             default:
                 if (read (sd, &buf,sizeof(buf)) < 0)

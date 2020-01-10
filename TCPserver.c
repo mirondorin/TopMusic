@@ -168,34 +168,12 @@ void raspunde(void *arg)
         case 1:
             // retinem numarul de melodii 
             sql = "SELECT COUNT(*) FROM Songs";
-            rc = sqlite3_exec(db, sql, callback_number, 0, &err_msg);
-            pFile = fopen("myfile.txt" , "a+");
-            fgets(buf, sizeof(buf), pFile);
-            printf("bufferul este %s\n",buf); 
-            if (write (tdL.cl, &buf, sizeof(buf)) <= 0) {
-                printf("[Thread %d] ",tdL.idThread);
-                perror ("[Thread]Eroare la write() catre client.\n");
-            }
-            else
-                printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
-            pFile = fopen("myfile.txt" , "w+"); // stergem tot din fisier
+            rc = sqlite3_exec(db, sql, callback_number, &tdL.cl, &err_msg); 
             
             //Interogam baza de date pentru a ne afisa toate melodiile in ordine descrescatoare dupa numarul de Likes
             sql = "SELECT * FROM Songs ORDER BY Likes DESC";
             
-            rc = sqlite3_exec(db, sql, callback, 0, &err_msg);
-            pFile = fopen("myfile.txt" , "a+");
-            
-            while(fgets(buf, sizeof(buf), pFile) != NULL) {
-            
-                if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
-                {
-                    printf("[Thread %d] ",tdL.idThread);
-                    perror ("[Thread]Eroare la write() catre client.\n");
-                }
-                else
-                    printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
-            }
+            rc = sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
             
             if (rc != SQLITE_OK ) {
                 
@@ -205,10 +183,18 @@ void raspunde(void *arg)
                 sqlite3_free(err_msg);
                 sqlite3_close(db);
             }
+            
             break;
         
         case 2: 
-            strcpy(buf,"Have no time");
+            sql = "SELECT 'youtubelink' || cast(count(*) + 1 as text) FROM Songs;";
+            rc = sqlite3_exec(db, sql, callback_number, 0, &err_msg);
+            char name[50],link[100],description[200];
+            pFile = fopen("myfile.txt" , "r+");
+            fgets(link, sizeof(link), pFile);
+            
+            //Message for client
+            strcpy(buf,"Insert a name for the song: ");
             if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
             {
                 printf("[Thread %d] ",tdL.idThread);
@@ -216,6 +202,49 @@ void raspunde(void *arg)
             }
             else
                 printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
+            
+            //Reading name for song from client
+            if (read (tdL.cl, &name,sizeof(name)) <= 0)
+            {
+                printf("[Thread %d]\n",tdL.idThread);
+                perror ("Eroare la read() de la client.\n");
+            
+            }
+            printf ("[Thread %d]Mesajul a fost receptionat...%s\n",tdL.idThread, name);
+            
+            //Message for client
+            strcpy(buf,"Insert a description for the song: ");
+            if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
+            {
+                printf("[Thread %d] ",tdL.idThread);
+                perror ("[Thread]Eroare la write() catre client.\n");
+            }
+            else
+                printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
+            
+            //Reading description from client
+            if (read (tdL.cl, &description,sizeof(description)) <= 0)
+            {
+                printf("[Thread %d]\n",tdL.idThread);
+                perror ("Eroare la read() de la client.\n");
+            
+            }
+            printf ("[Thread %d]Mesajul a fost receptionat...%s\n",tdL.idThread, description);
+            
+            sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES) VALUES (%s,%s,%s,0);",name,link,description);
+            
+            strcpy(buf, "Song successfully inserted into database"); 
+            
+            if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
+            {
+                printf("[Thread %d] ",tdL.idThread);
+                perror ("[Thread]Eroare la write() catre client.\n");
+            }
+            else
+                printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
+            
+            pFile = fopen("myfile.txt" , "w+"); // stergem tot din fisier
+            
         break;
         default: 
             strcpy(buf,"mesaj serios");
@@ -234,40 +263,23 @@ void raspunde(void *arg)
     fclose(pFile);
 }
 
-int callback(void *NotUsed, int argc, char **argv, 
-                    char **azColName) {
-    
-    NotUsed = 0;
-    pFile = fopen ("myfile.txt" , "a");
-    
+int callback(void *sd, int argc, char **argv, char **azColName) {
+    int socketDescriptor = *((int *)sd);
     for (int i = 0; i < argc; i++) {
-        
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-        fprintf(pFile,"%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }
-
-    fclose(pFile);
-    
-    printf("\n");
-    
+        char buf[500];
+        sprintf(buf ,"%s = %s\n", azColName[i], argv[i] ? argv[i] : " ");
+        printf("Sent to %d: %s\n", socketDescriptor, buf);
+        write(socketDescriptor, buf, sizeof(buf));
+        read(socketDescriptor, buf, sizeof(buf));
+        if(atoi(buf) != 1){
+            perror("Error, client didn't get song info");
+        }
+    }    
     return 0;
 }
 
-int callback_number(void *NotUsed, int argc, char **argv, 
-                    char **azColName) {
-    
-    NotUsed = 0;
-    pFile = fopen ("myfile.txt" , "a");
-    
-    for (int i = 0; i < argc; i++) {
-        
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-        fprintf(pFile,"%s\n", argv[i] ? argv[i] : "NULL");
-    }
-
-    fclose(pFile);
-    
-    printf("\n");
-    
+int callback_number(void *sd, int argc, char **argv, char **azColName) {
+    int socketDescriptor = *((int *)sd);
+    write(socketDescriptor, argv[0] ? argv[0] : "0", sizeof(buf));    
     return 0;
 }
