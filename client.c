@@ -23,6 +23,9 @@ extern int errno;
 /* portul de conectare la server*/
 int port;
 
+void printMenu();
+void listSongs(int sd);
+
 int main (int argc, char *argv[])
 {
   int sd;			// descriptorul de socket
@@ -45,7 +48,7 @@ int main (int argc, char *argv[])
   if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
     {
       perror ("Eroare la socket().\n");
-      return errno;
+      exit errno;
     }
 
   /* umplem structura folosita pentru realizarea conexiunii cu serverul */
@@ -65,8 +68,7 @@ int main (int argc, char *argv[])
 
   while(quit == 0) {
 		/* citirea mesajului */
-		printf ("[client]Introduceti un numar: ");
-		fflush (stdout);
+		printMenu();
 		read (0, buf, sizeof(buf));
 		nr=atoi(buf);
 		//scanf("%d",&nr);
@@ -84,25 +86,7 @@ int main (int argc, char *argv[])
 		   (apel blocant pina cind serverul raspunde) */
         switch(nr) {
             case 1:
-                if (read (sd, &buf,sizeof(buf)) < 0)
-                {
-                    perror ("[client]Eroare la read() de la server.\n");
-                    return errno;
-                }
-                printf("buffer are valoarea %s\n",buf);
-                lines_count = atoi(buf) * 4;
-                printf("lines_count = %d\n",lines_count);
-                
-                for(int i = 1; i <= lines_count; i++) {
-                    if (read (sd, &buf,sizeof(buf)) < 0)
-                    {
-                        perror ("[client]Eroare la read() de la server.\n");
-                        return errno;
-                    }
-                    /* afisam mesajul primit */
-                    printf ("[client]Mesajul primit este: %s", buf);
-                    if (i % 4 == 0) printf("\n");
-                }
+                listSongs(sd);
                 break;
             case 2:
                 if (read (sd, &buf,sizeof(buf)) < 0)
@@ -125,3 +109,40 @@ int main (int argc, char *argv[])
   close (sd);
 }
 
+void listSongs(int sd)
+{
+    char buf[1000];
+    int lines_count;
+    if (read (sd, &buf,sizeof(buf)) < 0)
+    {
+        perror ("[client]Eroare la read() de la server.\n");
+        exit errno;
+    }
+    printf("buffer are valoarea %s\n",buf);
+    lines_count = atoi(buf) * 4;
+    printf("lines_count = %d\n",lines_count);
+    
+    for(int i = 1; i <= lines_count; i++) {
+        if (read (sd, &buf,sizeof(buf)) < 0)
+        {
+            perror ("[client]Eroare la read() de la server.\n");
+            exit errno;
+        }
+        /* afisam mesajul primit */
+        printf ("[client]Mesajul primit este: %s", buf);
+        if (i % 4 == 0) printf("\n");
+    }
+}
+
+void printMenu()
+{
+    printf("Here's a list of the available commands: \n");
+    printf("1. Login\n");
+    printf("2. Register\n");
+    printf("3. List Songs\n");
+    printf("4. Add Song\n");
+    printf("5. Comment on a song\n");
+    printf("6. Make admin\n");
+    printf("\nEnter the number for your desired command: ");
+    fflush(stdout);
+}
