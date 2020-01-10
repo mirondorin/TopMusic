@@ -55,7 +55,7 @@ int main ()
     int i=0;
     
    //Start database
-    startDB(rc, db);
+    //startDB(rc, db);
 
   /* crearea unui socket */
   if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
@@ -153,52 +153,60 @@ void raspunde(void *arg)
     }
 	printf ("[Thread %d]Mesajul a fost receptionat...%d\n",tdL.idThread, nr);
     
+    char *err_msg = 0, *sql;
+    
+    rc = sqlite3_open("topmusic.db", &db);
+    
+    if (rc != SQLITE_OK) {
+        
+        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+    }
+    
     /*pregatim mesajul de raspuns */
     switch(nr) {
         case 1:
-        rc = sqlite3_open("topmusic.db", &db);
-        char *err_msg = 0;
-        
-        // retinem numarul de melodii 
-        char *sql = "SELECT COUNT(*) FROM Songs";
-        rc = sqlite3_exec(db, sql, callback_number, 0, &err_msg);
-        pFile = fopen("myfile.txt" , "a+");
-        fgets(buf, sizeof(buf), pFile);
-        printf("bufferul este %s\n",buf); 
-        if (write (tdL.cl, &buf, sizeof(buf)) <= 0) {
-            printf("[Thread %d] ",tdL.idThread);
-            perror ("[Thread]Eroare la write() catre client.\n");
-        }
-        else
-            printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
-        pFile = fopen("myfile.txt" , "w+"); // stergem tot din fisier
-        
-        //Interogam baza de date pentru a ne afisa toate melodiile in ordine descrescatoare dupa numarul de Likes
-        sql = "SELECT * FROM Songs ORDER BY Likes DESC";
-        
-        rc = sqlite3_exec(db, sql, callback, 0, &err_msg);
-        pFile = fopen("myfile.txt" , "a+");
-        
-        while(fgets(buf, sizeof(buf), pFile) != NULL) {
-        
-            if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
-            {
+            // retinem numarul de melodii 
+            sql = "SELECT COUNT(*) FROM Songs";
+            rc = sqlite3_exec(db, sql, callback_number, 0, &err_msg);
+            pFile = fopen("myfile.txt" , "a+");
+            fgets(buf, sizeof(buf), pFile);
+            printf("bufferul este %s\n",buf); 
+            if (write (tdL.cl, &buf, sizeof(buf)) <= 0) {
                 printf("[Thread %d] ",tdL.idThread);
                 perror ("[Thread]Eroare la write() catre client.\n");
             }
             else
                 printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
-        }
-        
-        if (rc != SQLITE_OK ) {
+            pFile = fopen("myfile.txt" , "w+"); // stergem tot din fisier
             
-            fprintf(stderr, "Failed to select data\n");
-            fprintf(stderr, "SQL error: %s\n", err_msg);
+            //Interogam baza de date pentru a ne afisa toate melodiile in ordine descrescatoare dupa numarul de Likes
+            sql = "SELECT * FROM Songs ORDER BY Likes DESC";
+            
+            rc = sqlite3_exec(db, sql, callback, 0, &err_msg);
+            pFile = fopen("myfile.txt" , "a+");
+            
+            while(fgets(buf, sizeof(buf), pFile) != NULL) {
+            
+                if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
+                {
+                    printf("[Thread %d] ",tdL.idThread);
+                    perror ("[Thread]Eroare la write() catre client.\n");
+                }
+                else
+                    printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
+            }
+            
+            if (rc != SQLITE_OK ) {
+                
+                fprintf(stderr, "Failed to select data\n");
+                fprintf(stderr, "SQL error: %s\n", err_msg);
 
-            sqlite3_free(err_msg);
-            sqlite3_close(db);
-        }
-        break;
+                sqlite3_free(err_msg);
+                sqlite3_close(db);
+            }
+            break;
+        
         case 2: 
             strcpy(buf,"Have no time");
             if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
