@@ -39,7 +39,7 @@ typedef struct thData{
 }thData;
 
 static void *treat(void *); /* functia executata de fiecare thread ce realizeaza comunicarea cu clientii */
-void raspunde(void *);
+_Bool raspunde(void *);
 int callback(void *, int, char **, char **);
 int callback_number(void *, int, char **, char **);
 
@@ -132,7 +132,11 @@ static void *treat(void * arg)
 		printf ("[thread]- %d - Asteptam mesajul...\n", tdL.idThread);
 		fflush (stdout);		 
 		pthread_detach(pthread_self());		
-		raspunde((struct thData*)arg);
+    _Bool success;
+		success = raspunde((struct thData*)arg);
+    if(!success){
+      break;
+    }
 	}
 		/* am terminat cu acest client, inchidem conexiunea */
 	close ((intptr_t)arg);
@@ -140,7 +144,7 @@ static void *treat(void * arg)
   		
 };
 
-void raspunde(void *arg)
+_Bool raspunde(void *arg)
 {
     int nr, i = 0;
 	struct thData tdL; 
@@ -148,8 +152,8 @@ void raspunde(void *arg)
 	if (read (tdL.cl, &nr,sizeof(int)) <= 0)
     {
         printf("[Thread %d]\n",tdL.idThread);
-        perror ("Eroare la read() de la client.\n");
-    
+        perror ("Eroare la read() de la client.\n");\
+        return 0;
     }
 	printf ("[Thread %d]Mesajul a fost receptionat...%d\n",tdL.idThread, nr);
     
@@ -261,6 +265,7 @@ void raspunde(void *arg)
 
     pFile = fopen("myfile.txt" , "w+");
     fclose(pFile);
+  return 1;
 }
 
 int callback(void *sd, int argc, char **argv, char **azColName) {
