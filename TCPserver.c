@@ -41,8 +41,10 @@ typedef struct thData{
 static void *treat(void *); /* functia executata de fiecare thread ce realizeaza comunicarea cu clientii */
 _Bool raspunde(void *);
 int callback(void *, int, char **, char **);
-int callback_number(void *, int, char **, char **);
-
+int callback_void(void *, int, char **, char **);
+int callback_send_first_to_client(void *, int, char **, char **);
+int callback_value_first_to_server(void *, int, char**, char **);
+void readFromClient(int, char*, int);
 
 int main ()
 {
@@ -170,11 +172,10 @@ _Bool raspunde(void *arg)
     /*pregatim mesajul de raspuns */
     switch(nr) {
         case 1:
-            // retinem numarul de melodii 
             sql = "SELECT COUNT(*) FROM Songs";
-            rc = sqlite3_exec(db, sql, callback_number, &tdL.cl, &err_msg); 
+            rc = sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg); 
             
-            //Interogam baza de date pentru a ne afisa toate melodiile in ordine descrescatoare dupa numarul de Likes
+            //Select all songs sorted desc by their likes
             sql = "SELECT * FROM Songs ORDER BY Likes DESC";
             
             rc = sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
@@ -192,7 +193,7 @@ _Bool raspunde(void *arg)
         
         case 2: 
             sql = "SELECT 'youtubelink' || cast(count(*) + 1 as text) FROM Songs;";
-            rc = sqlite3_exec(db, sql, callback_number, 0, &err_msg);
+            rc = sqlite3_exec(db, sql, callback_send_first_to_client, 0, &err_msg);
             char name[50],link[100],description[200];
             pFile = fopen("myfile.txt" , "r+");
             fgets(link, sizeof(link), pFile);
@@ -247,9 +248,21 @@ _Bool raspunde(void *arg)
             else
                 printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
             
-            pFile = fopen("myfile.txt" , "w+"); // stergem tot din fisier
-            
-        break;
+            break;
+        case 4:
+            sql = "SELECT 'youtubelink' || cast(count(*) + 1 as text) FROM Songs;";
+            char songName[50], songDescription[200], youtubeLink[250], information[250], *token;
+            sqlite3_exec(db, sql, callback_value_first_to_server, youtubeLink, &err_msg);
+            read(tdL.cl, &information, sizeof(information));
+            token = strtok(information,"\n");
+            strcpy(songName, token);
+            token = strtok(NULL,"\n");
+            strcpy(songDescription,token);
+            songDescription[strlen(songDescription)] = '\0';
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES) VALUES (\'%s\',\'%s\',\'%s\',0);", songName, youtubeLink, songDescription);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            break;
         default: 
             strcpy(buf,"mesaj serios");
             
@@ -262,10 +275,16 @@ _Bool raspunde(void *arg)
                 printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
     }
 	printf("[Thread %d]Trimitem mesajul inapoi...%s\n",tdL.idThread, buf);
-
-    pFile = fopen("myfile.txt" , "w+");
-    fclose(pFile);
   return 1;
+}
+
+void readFromClient(int socketDescriptor, char *buf, int sizeBuffer){
+    if (read (socketDescriptor, &buf, sizeBuffer) < 0)
+    {
+        perror ("[client]Eroare la read() de la client.\n");
+        exit errno;
+    }
+    printf("%d BUFFER SIZE FOR SOME REASON", sizeBuffer);
 }
 
 int callback(void *sd, int argc, char **argv, char **azColName) {
@@ -283,8 +302,17 @@ int callback(void *sd, int argc, char **argv, char **azColName) {
     return 0;
 }
 
-int callback_number(void *sd, int argc, char **argv, char **azColName) {
+int callback_value_first_to_server(void *value, int argc, char **argv, char **azColName) {
+    strcpy(value, argv[0]);
+    return 0;
+}
+
+int callback_void(void *value, int argc, char **argv, char **azColName) {
+    return 0;
+}
+
+int callback_send_first_to_client(void *sd, int argc, char **argv, char **azColName) {
     int socketDescriptor = *((int *)sd);
-    write(socketDescriptor, argv[0] ? argv[0] : "0", sizeof(buf));    
+    write(socketDescriptor, argv[0] ? argv[0] : "0", sizeof(argv[0]));    
     return 0;
 }

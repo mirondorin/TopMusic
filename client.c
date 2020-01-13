@@ -24,6 +24,8 @@ extern int errno;
 int port;
 
 void printMenu();
+void readFromServer(int socketDescriptor, char * buf, int sizeBuffer);
+void writeToServer(int socketDescriptor, char * buf, int sizeBuffer);
 void listSongs(int sd);
 
 int main (int argc, char *argv[])
@@ -86,56 +88,20 @@ int main (int argc, char *argv[])
 		   (apel blocant pina cind serverul raspunde) */
         switch(nr) {
             case 1:
-               listSongs(sd);
+                listSongs(sd);
                 break;
-            case 2:
-                if (read (sd, &buf,sizeof(buf)) < 0)
-                {
-                    perror ("[client]Eroare la read() de la server.\n");
-                    return errno;
-                }
-                printf ("%s", buf);
-                
-                char name[50],description[200];
-                
-                read(0, name, sizeof(name));
-                
-                //Send name for song to server
-                if (write (sd,&name,sizeof(name)) <= 0)
-                {
-                    perror ("[client]Eroare la write() spre server.\n");
-                    return errno;
-                }
-                
-                if (read (sd, &buf,sizeof(buf)) < 0)
-                {
-                    perror ("[client]Eroare la read() de la server.\n");
-                    return errno;
-                }
-                printf ("\n%s", buf);
-                
-                read(0, description, sizeof(description));
-                
-                if (write (sd,&description,sizeof(description)) <= 0)
-                {
-                    perror ("[client]Eroare la write() spre server.\n");
-                    return errno;
-                }
-                
-                if (read (sd, &buf,sizeof(buf)) < 0)
-                {
-                    perror ("[client]Eroare la read() de la server.\n");
-                    return errno;
-                }
-                printf ("\n%s", buf);
-                
+            case 4:
+                printf ("Insert a name for the song: ");
+                char name[50], description[200], information[250];
+                fgets(name, 50, stdin);
+                printf ("\nInsert a description for the song: ");
+                fgets(description, 200, stdin);
+                strcpy(information, name);
+                strncpy(information + strlen(information), description, strlen(description)+1);
+                write(sd, &information, sizeof(information));      
                 break;
             default:
-                if (read (sd, &buf,sizeof(buf)) < 0)
-                {
-                    perror ("[client]Eroare la read() de la server.\n");
-                    return errno;
-                }
+                readFromServer(sd, buf, sizeof(buf));
                 printf ("[client]Mesajul primit este: %s\n", buf);
         }
 	}
@@ -147,28 +113,34 @@ void listSongs(int sd)
 {
     char buf[1000];
     int lines_count;
-    if (read (sd, &buf,sizeof(buf)) < 0)
-    {
-        perror ("[client]Eroare la read() de la server.\n");
-        exit errno;
-    }
+    read(sd, &buf,sizeof(buf));
     printf("buffer are valoarea %s\n",buf);
     lines_count = atoi(buf) * 4;
     printf("lines_count = %d\n",lines_count);
     
     for(int i = 1; i <= lines_count; i++) {
-        if (read (sd, &buf,sizeof(buf)) < 0)
-        {
-            perror ("[client]Eroare la read() de la server.\n");
-            exit errno;
-        }
-        else{
-          write(sd, "1", 1);
-        }
+        read(sd, &buf,sizeof(buf));
+        write(sd, "1", 1);
         /* afisam mesajul primit */
         printf ("[client]Mesajul primit este: %s", buf);
         if (i % 4 == 0) printf("\n");
     }
+}
+
+void readFromServer(int socketDescriptor, char *buf, int sizeBuffer){
+    if (read (socketDescriptor, &buf, sizeBuffer) < 0)
+    {
+        perror ("[client]Eroare la read() de la server.\n");
+        exit errno;
+    }
+}
+
+void writeToServer(int socketDescriptor,char *buf, int sizeBuffer){
+    if (write (socketDescriptor, &buf, sizeBuffer) <= 0)
+    {
+        perror ("[client]Eroare la write() spre server.\n");
+        exit errno;
+    }    
 }
 
 void printMenu()
