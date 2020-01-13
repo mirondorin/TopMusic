@@ -91,14 +91,20 @@ int main (int argc, char *argv[])
                 listSongs(sd);
                 break;
             case 4:
-                printf ("Insert a name for the song: ");
+                printf("Insert a name for the song: ");
                 char name[50], description[200], information[250];
-                fgets(name, 50, stdin);
-                printf ("\nInsert a description for the song: ");
-                fgets(description, 200, stdin);
+                fgets(name, sizeof(name), stdin);
+                printf("\nInsert a description for the song: ");
+                fgets(description, sizeof(description), stdin);
                 strcpy(information, name);
                 strncpy(information + strlen(information), description, strlen(description)+1);
                 write(sd, &information, sizeof(information));      
+                break;
+            case 5:
+                printf("Insert the link of the song you would like to delete: ");
+                char youtubeLink[250];
+                fgets(youtubeLink, sizeof(youtubeLink), stdin);
+                write(sd, &youtubeLink, sizeof(youtubeLink));
                 break;
             default:
                 readFromServer(sd, buf, sizeof(buf));
@@ -150,8 +156,9 @@ void printMenu()
     printf("2. Register\n");
     printf("3. List Songs\n");
     printf("4. Add Song\n");
-    printf("5. Comment on a song\n");
-    printf("6. Make admin\n");
+    printf("5. Delete Song\n");
+    printf("6. Comment on a song\n");
+    printf("7. Make admin\n");
     printf("\nEnter the number for your desired command: ");
     fflush(stdout);
 }

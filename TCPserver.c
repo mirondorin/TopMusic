@@ -263,6 +263,13 @@ _Bool raspunde(void *arg)
             sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES) VALUES (\'%s\',\'%s\',\'%s\',0);", songName, youtubeLink, songDescription);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
+        case 5:
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            char delete_youtubeLink[250];
+            read(tdL.cl, &delete_youtubeLink, sizeof(delete_youtubeLink));
+            sprintf(sql, "DELETE FROM SONGS WHERE LINK = \'%s\';", delete_youtubeLink);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            break;
         default: 
             strcpy(buf,"mesaj serios");
             
