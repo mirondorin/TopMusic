@@ -195,23 +195,25 @@ _Bool raspunde(void *arg)
             read(tdL.cl, &genreName, sizeof(genreName));
             genreName[strlen(genreName) - 1] = '\0';
             sql = (char *)malloc((1000+1)*sizeof(char));
-            sprintf(sql, "SELECT COUNT(*) FROM (SELECT S.Song_ID, S.Name, S.Link, S.Description, Likes, G.Name Genre FROM Songs S JOIN Genre G on S.Song_ID = G.Song_ID WHERE G.Name LIKE \'%s\');", genreName);
+            sprintf(sql, "SELECT COUNT(Song_ID) FROM SONGS WHERE Genre LIKE \'%%%s%%\';", genreName);
             sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg);
-            sprintf(sql, "SELECT S.Song_ID, S.Name, S.Link, S.Description, Likes, G.Name Genre FROM Songs S JOIN Genre G on S.Song_ID = G.Song_ID WHERE G.Name LIKE \'%s\';", genreName);
+            sprintf(sql, "SELECT * from SONGS where Genre LIKE \'%%%s%%\';", genreName);
             sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
             break;
         case 5:
             sql = "SELECT 'youtubelink' || ifnull(max(Song_ID) + 1, 1)  FROM Songs;";
-            char songName[50], songDescription[200], youtubeLink[250], information[250], *token;
+            char songName[50], songGenre[50], songDescription[200], youtubeLink[250], information[300], *token;
             sqlite3_exec(db, sql, callback_value_first_to_server, youtubeLink, &err_msg);
             read(tdL.cl, &information, sizeof(information));
             token = strtok(information,"\n");
             strcpy(songName, token);
-            token = strtok(NULL,"\n");
+            token = strtok(NULL, "\n");
             strcpy(songDescription,token);
+            token = strtok(NULL, "\n");
+            strcpy(songGenre, token);
             songDescription[strlen(songDescription)] = '\0';
             sql = (char *)malloc((1000+1)*sizeof(char));
-            sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES) VALUES (\'%s\',\'%s\',\'%s\',0);", songName, youtubeLink, songDescription);
+            sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES,GENRE) VALUES (\'%s\',\'%s\',\'%s\',0,\'%s\');", songName, youtubeLink, songDescription, songGenre);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
 
@@ -219,6 +221,7 @@ _Bool raspunde(void *arg)
             sql = (char *)malloc((1000+1)*sizeof(char));
             char Song_ID[100];
             read(tdL.cl, &Song_ID, sizeof(Song_ID));
+            Song_ID[strlen(Song_ID) -1] = '\0';
             sprintf(sql, "DELETE FROM SONGS WHERE Song_ID = %s;", Song_ID);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;

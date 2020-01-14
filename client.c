@@ -109,13 +109,16 @@ int main (int argc, char *argv[])
                 break;
             case 5:
                 printf("Insert a name for the song: ");
-                char name[50], description[200], information[250];
+                char name[50], genre[50], description[200], information[300], *token;
                 fgets(name, sizeof(name), stdin);
                 printf("\nInsert a description for the song: ");
                 fgets(description, sizeof(description), stdin);
+                printf("\nInsert a genre for the song: ");
+                fgets(genre, sizeof(genre), stdin);
                 strcpy(information, name);
-                strncpy(information + strlen(information), description, strlen(description)+1);
-                write(sd, &information, sizeof(information));      
+                strncpy(information + strlen(information), description, strlen(description) + 1);
+                strncpy(information + strlen(information), genre, strlen(genre) + 1);
+                write(sd, &information, sizeof(information));    
                 break;
             case 6:
                 printf("Insert the ID of the song you would like to delete: ");
@@ -137,7 +140,7 @@ void listSongs(int sd)
     int lines_count;
     read(sd, &buf,sizeof(buf));
     printf("buffer are valoarea %s\n",buf);
-    lines_count = atoi(buf) * 5;
+    lines_count = atoi(buf) * 6;
     printf("lines_count = %d\n",lines_count);
     
     for(int i = 1; i <= lines_count; i++) {
@@ -145,7 +148,7 @@ void listSongs(int sd)
         write(sd, "1", 1);
         /* afisam mesajul primit */
         printf ("[client]Mesajul primit este: %s", buf);
-        if (i % 5 == 0) printf("\n");
+        if (i % 6 == 0) printf("\n");
     }
 }
 
