@@ -189,8 +189,18 @@ _Bool raspunde(void *arg)
                 sqlite3_close(db);
             }
             break;
-
         case 4:
+            sql = "BLANK";
+            char genreName[50];
+            read(tdL.cl, &genreName, sizeof(genreName));
+            genreName[strlen(genreName) - 1] = '\0';
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            sprintf(sql, "SELECT COUNT(*) FROM (SELECT S.Song_ID, S.Name, S.Link, S.Description, Likes, G.Name Genre FROM Songs S JOIN Genre G on S.Song_ID = G.Song_ID WHERE G.Name LIKE \'%s\');", genreName);
+            sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg);
+            sprintf(sql, "SELECT S.Song_ID, S.Name, S.Link, S.Description, Likes, G.Name Genre FROM Songs S JOIN Genre G on S.Song_ID = G.Song_ID WHERE G.Name LIKE \'%s\';", genreName);
+            sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
+            break;
+        case 5:
             sql = "SELECT 'youtubelink' || ifnull(max(Song_ID) + 1, 1)  FROM Songs;";
             char songName[50], songDescription[200], youtubeLink[250], information[250], *token;
             sqlite3_exec(db, sql, callback_value_first_to_server, youtubeLink, &err_msg);
@@ -205,7 +215,7 @@ _Bool raspunde(void *arg)
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
 
-        case 5:
+        case 6:
             sql = (char *)malloc((1000+1)*sizeof(char));
             char Song_ID[100];
             read(tdL.cl, &Song_ID, sizeof(Song_ID));

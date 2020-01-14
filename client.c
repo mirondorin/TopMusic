@@ -91,6 +91,23 @@ int main (int argc, char *argv[])
                 listSongs(sd);
                 break;
             case 4:
+                printf("What genre of songs would you like to see: ");
+                char genreName[50],tmp_buf[1000];
+                fgets(genreName, sizeof(genreName), stdin);
+                write(sd, &genreName, sizeof(genreName));
+                int lines_count;
+                read(sd, &tmp_buf, sizeof(tmp_buf));
+                lines_count = atoi(tmp_buf) * 6;
+                printf("lines_count este = %d\n", lines_count);
+                for(int i = 1; i <= lines_count; i++) {
+                    read(sd, &tmp_buf, sizeof(tmp_buf));
+                    write(sd, "1", 1);
+                    /* afisam mesajul primit */
+                    printf ("[client]Mesajul primit este: %s", tmp_buf);
+                    if (i % 6 == 0) printf("\n");
+                }
+                break;
+            case 5:
                 printf("Insert a name for the song: ");
                 char name[50], description[200], information[250];
                 fgets(name, sizeof(name), stdin);
@@ -100,7 +117,7 @@ int main (int argc, char *argv[])
                 strncpy(information + strlen(information), description, strlen(description)+1);
                 write(sd, &information, sizeof(information));      
                 break;
-            case 5:
+            case 6:
                 printf("Insert the ID of the song you would like to delete: ");
                 char Song_ID[100];
                 fgets(Song_ID, sizeof(Song_ID), stdin);
@@ -154,10 +171,11 @@ void printMenu()
     printf("1. Login\n");
     printf("2. Register\n");
     printf("3. List Songs\n");
-    printf("4. Add Song\n");
-    printf("5. Delete Song\n");
-    printf("6. Comment on a song\n");
-    printf("7. Make admin\n");
+    printf("4. List Songs from a Genre\n");
+    printf("5. Add Song\n");
+    printf("6. Delete Song\n");
+    printf("7. Comment on a song\n");
+    printf("8. Make admin\n");
     printf("\nEnter the number for your desired command: ");
     fflush(stdout);
 }
