@@ -87,7 +87,7 @@ int main (int argc, char *argv[])
 		/* citirea raspunsului dat de server 
 		   (apel blocant pina cind serverul raspunde) */
         switch(nr) {
-            case 1:
+            case 3:
                 listSongs(sd);
                 break;
             case 4:
@@ -101,14 +101,13 @@ int main (int argc, char *argv[])
                 write(sd, &information, sizeof(information));      
                 break;
             case 5:
-                printf("Insert the link of the song you would like to delete: ");
-                char youtubeLink[250];
-                fgets(youtubeLink, sizeof(youtubeLink), stdin);
-                write(sd, &youtubeLink, sizeof(youtubeLink));
+                printf("Insert the ID of the song you would like to delete: ");
+                char Song_ID[100];
+                fgets(Song_ID, sizeof(Song_ID), stdin);
+                write(sd, &Song_ID, sizeof(Song_ID));
                 break;
             default:
-                readFromServer(sd, buf, sizeof(buf));
-                printf ("[client]Mesajul primit este: %s\n", buf);
+                printf("Invalid number\n");
         }
 	}
   /* inchidem conexiunea, am terminat */
@@ -121,7 +120,7 @@ void listSongs(int sd)
     int lines_count;
     read(sd, &buf,sizeof(buf));
     printf("buffer are valoarea %s\n",buf);
-    lines_count = atoi(buf) * 4;
+    lines_count = atoi(buf) * 5;
     printf("lines_count = %d\n",lines_count);
     
     for(int i = 1; i <= lines_count; i++) {
@@ -129,7 +128,7 @@ void listSongs(int sd)
         write(sd, "1", 1);
         /* afisam mesajul primit */
         printf ("[client]Mesajul primit este: %s", buf);
-        if (i % 4 == 0) printf("\n");
+        if (i % 5 == 0) printf("\n");
     }
 }
 

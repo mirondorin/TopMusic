@@ -171,7 +171,7 @@ _Bool raspunde(void *arg)
     
     /*pregatim mesajul de raspuns */
     switch(nr) {
-        case 1:
+        case 3:
             sql = "SELECT COUNT(*) FROM Songs";
             rc = sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg); 
             
@@ -188,69 +188,10 @@ _Bool raspunde(void *arg)
                 sqlite3_free(err_msg);
                 sqlite3_close(db);
             }
-            
             break;
-        
-        case 2: 
-            sql = "SELECT 'youtubelink' || cast(count(*) + 1 as text) FROM Songs;";
-            rc = sqlite3_exec(db, sql, callback_send_first_to_client, 0, &err_msg);
-            char name[50],link[100],description[200];
-            pFile = fopen("myfile.txt" , "r+");
-            fgets(link, sizeof(link), pFile);
-            
-            //Message for client
-            strcpy(buf,"Insert a name for the song: ");
-            if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
-            {
-                printf("[Thread %d] ",tdL.idThread);
-                perror ("[Thread]Eroare la write() catre client.\n");
-            }
-            else
-                printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
-            
-            //Reading name for song from client
-            if (read (tdL.cl, &name,sizeof(name)) <= 0)
-            {
-                printf("[Thread %d]\n",tdL.idThread);
-                perror ("Eroare la read() de la client.\n");
-            
-            }
-            printf ("[Thread %d]Mesajul a fost receptionat...%s\n",tdL.idThread, name);
-            
-            //Message for client
-            strcpy(buf,"Insert a description for the song: ");
-            if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
-            {
-                printf("[Thread %d] ",tdL.idThread);
-                perror ("[Thread]Eroare la write() catre client.\n");
-            }
-            else
-                printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
-            
-            //Reading description from client
-            if (read (tdL.cl, &description,sizeof(description)) <= 0)
-            {
-                printf("[Thread %d]\n",tdL.idThread);
-                perror ("Eroare la read() de la client.\n");
-            
-            }
-            printf ("[Thread %d]Mesajul a fost receptionat...%s\n",tdL.idThread, description);
-            
-            sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES) VALUES (%s,%s,%s,0);",name,link,description);
-            
-            strcpy(buf, "Song successfully inserted into database"); 
-            
-            if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
-            {
-                printf("[Thread %d] ",tdL.idThread);
-                perror ("[Thread]Eroare la write() catre client.\n");
-            }
-            else
-                printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
-            
-            break;
+
         case 4:
-            sql = "SELECT 'youtubelink' || cast(count(*) + 1 as text) FROM Songs;";
+            sql = "SELECT 'youtubelink' || ifnull(max(Song_ID) + 1, 1)  FROM Songs;";
             char songName[50], songDescription[200], youtubeLink[250], information[250], *token;
             sqlite3_exec(db, sql, callback_value_first_to_server, youtubeLink, &err_msg);
             read(tdL.cl, &information, sizeof(information));
@@ -263,23 +204,16 @@ _Bool raspunde(void *arg)
             sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES) VALUES (\'%s\',\'%s\',\'%s\',0);", songName, youtubeLink, songDescription);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
+
         case 5:
             sql = (char *)malloc((1000+1)*sizeof(char));
-            char delete_youtubeLink[250];
-            read(tdL.cl, &delete_youtubeLink, sizeof(delete_youtubeLink));
-            sprintf(sql, "DELETE FROM SONGS WHERE LINK = \'%s\';", delete_youtubeLink);
+            char Song_ID[100];
+            read(tdL.cl, &Song_ID, sizeof(Song_ID));
+            sprintf(sql, "DELETE FROM SONGS WHERE Song_ID = %s;", Song_ID);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
         default: 
-            strcpy(buf,"mesaj serios");
-            
-            if (write (tdL.cl, &buf, sizeof(buf)) <= 0)
-            {
-                printf("[Thread %d] ",tdL.idThread);
-                perror ("[Thread]Eroare la write() catre client.\n");
-            }
-            else
-                printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);
+           printf("User did not insert a valid number\n");
     }
 	printf("[Thread %d]Trimitem mesajul inapoi...%s\n",tdL.idThread, buf);
   return 1;
@@ -291,7 +225,6 @@ void readFromClient(int socketDescriptor, char *buf, int sizeBuffer){
         perror ("[client]Eroare la read() de la client.\n");
         exit errno;
     }
-    printf("%d BUFFER SIZE FOR SOME REASON", sizeBuffer);
 }
 
 int callback(void *sd, int argc, char **argv, char **azColName) {
