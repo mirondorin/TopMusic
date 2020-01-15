@@ -159,7 +159,8 @@ _Bool raspunde(void *arg)
     }
 	printf ("[Thread %d]Mesajul a fost receptionat...%d\n",tdL.idThread, nr);
     
-    char user_name[50], user_pass[50], user_type[50], information[300], *token, *err_msg = 0, *sql;
+    char user_name[50], user_pass[50], user_type[50], information[300], Song_ID[100], *token, *err_msg = 0, *sql;
+    int user_ID = 3;
     rc = sqlite3_open("topmusic.db", &db);
     
     if (rc != SQLITE_OK) {
@@ -184,12 +185,13 @@ _Bool raspunde(void *arg)
 
         case 2:
             read(tdL.cl, &information, sizeof(information));
+            char tmp_user_name[50], tmp_user_pass[50];
             token = strtok(information, "\n");
-            strcpy(user_name, token);
+            strcpy(tmp_user_name, token);
             token = strtok(NULL, "\n");
-            strcpy(user_pass, token);
+            strcpy(tmp_user_pass, token);
             sql = (char *)malloc((1000+1)*sizeof(char));
-            sprintf(sql, "INSERT INTO Users (User_Name, User_Pass) VALUES (\'%s\', \'%s\');", user_name, user_pass);
+            sprintf(sql, "INSERT INTO Users (User_Name, User_Pass) VALUES (\'%s\', \'%s\');", tmp_user_name, tmp_user_pass);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
 
@@ -244,7 +246,6 @@ _Bool raspunde(void *arg)
 
         case 6:
             sql = (char *)malloc((1000+1)*sizeof(char));
-            char Song_ID[100];
             read(tdL.cl, &Song_ID, sizeof(Song_ID));
             Song_ID[strlen(Song_ID) -1] = '\0';
             sprintf(sql, "DELETE FROM SONGS WHERE Song_ID = %s;", Song_ID);
@@ -252,7 +253,15 @@ _Bool raspunde(void *arg)
             break;
 
         case 7:
-            
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            char comment[200];
+            read(tdL.cl, &information, sizeof(information));
+            token = strtok(information, "\n");
+            strcpy(Song_ID, token);
+            token = strtok(NULL, "\n");
+            strcpy(comment, token);
+            sprintf(sql, "INSERT INTO COMMENTS (User_Comment, User_ID, Song_ID) VALUES (\'%s\', %d, \'%s\');", comment, user_ID, Song_ID);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
         default: 
            printf("User did not insert a valid number\n");

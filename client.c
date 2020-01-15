@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
   struct sockaddr_in server;	// structura folosita pentru conectare 
   		// mesajul trimis
   int nr=0, iterations = 1000;
-  char buf[1000], user_name[50], user_pass[50], temp_user[300], Song_ID[100];
+  char buf[1000], user_name[50], user_pass[50], temp_user[300], Song_ID[100], information[300];
 
   /* exista toate argumentele in linia de comanda? */
   if (argc != 3)
@@ -131,16 +131,16 @@ int main (int argc, char *argv[])
 
             case 5:
                 printf("Insert a name for the song: ");
-                char name[50], genre[50], description[200], information[300], *token;
+                char name[50], genre[50], description[200], *token;
                 fgets(name, sizeof(name), stdin);
-                printf("\nInsert a description for the song: ");
+                printf("Insert a description for the song: ");
                 fgets(description, sizeof(description), stdin);
                 printf("\nInsert a genre for the song: ");
                 fgets(genre, sizeof(genre), stdin);
                 strcpy(information, name);
                 strncpy(information + strlen(information), description, strlen(description) + 1);
                 strncpy(information + strlen(information), genre, strlen(genre) + 1);
-                write(sd, &information, sizeof(information));    
+                write(sd, &information, sizeof(information));   
                 break;
 
             case 6:
@@ -152,9 +152,14 @@ int main (int argc, char *argv[])
             case 7:
                 printf("Insert the ID of the song you would like to comment on: ");
                 fgets(Song_ID, sizeof(Song_ID), stdin);
-                printf("\nComment: ");
+                printf("Comment: ");
                 char comment[200];
                 fgets(comment, sizeof(comment), stdin);
+                strcpy(information, Song_ID);
+                strncpy(information + strlen(information), comment, strlen(comment) + 1);
+                write(sd, &information, sizeof(information));
+                break;
+
             default:
                 printf("Invalid number\n");
         }
