@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
   struct sockaddr_in server;	// structura folosita pentru conectare 
   		// mesajul trimis
   int nr=0, iterations = 1000;
-  char buf[1000];
+  char buf[1000], user_name[50], user_pass[50], temp_user[300], Song_ID[100];
 
   /* exista toate argumentele in linia de comanda? */
   if (argc != 3)
@@ -87,9 +87,30 @@ int main (int argc, char *argv[])
 		/* citirea raspunsului dat de server 
 		   (apel blocant pina cind serverul raspunde) */
         switch(nr) {
+            case 1:
+                printf("username:");
+                fgets(user_name, sizeof(user_name), stdin);
+                printf("password:");
+                fgets(user_pass, sizeof(user_pass), stdin);
+                strcpy(temp_user, user_name);
+                strncpy(temp_user + strlen(temp_user), user_pass, strlen(user_pass) + 1);
+                write(sd, &temp_user, sizeof(temp_user));
+                break;
+
+            case 2:
+                printf("Enter a username:");
+                fgets(user_name, sizeof(user_name), stdin);
+                printf("Enter a password:");
+                fgets(user_pass, sizeof(user_pass), stdin);
+                strcpy(temp_user, user_name);
+                strncpy(temp_user + strlen(temp_user), user_pass, strlen(user_pass) + 1);
+                write(sd, &temp_user, sizeof(temp_user));
+                break;
+
             case 3:
                 listSongs(sd);
                 break;
+
             case 4:
                 printf("What genre of songs would you like to see: ");
                 char genreName[50],tmp_buf[1000];
@@ -107,6 +128,7 @@ int main (int argc, char *argv[])
                     if (i % 6 == 0) printf("\n");
                 }
                 break;
+
             case 5:
                 printf("Insert a name for the song: ");
                 char name[50], genre[50], description[200], information[300], *token;
@@ -120,12 +142,19 @@ int main (int argc, char *argv[])
                 strncpy(information + strlen(information), genre, strlen(genre) + 1);
                 write(sd, &information, sizeof(information));    
                 break;
+
             case 6:
                 printf("Insert the ID of the song you would like to delete: ");
-                char Song_ID[100];
                 fgets(Song_ID, sizeof(Song_ID), stdin);
                 write(sd, &Song_ID, sizeof(Song_ID));
                 break;
+
+            case 7:
+                printf("Insert the ID of the song you would like to comment on: ");
+                fgets(Song_ID, sizeof(Song_ID), stdin);
+                printf("\nComment: ");
+                char comment[200];
+                fgets(comment, sizeof(comment), stdin);
             default:
                 printf("Invalid number\n");
         }

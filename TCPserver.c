@@ -159,8 +159,7 @@ _Bool raspunde(void *arg)
     }
 	printf ("[Thread %d]Mesajul a fost receptionat...%d\n",tdL.idThread, nr);
     
-    char *err_msg = 0, *sql;
-    
+    char user_name[50], user_pass[50], user_type[50], information[300], *token, *err_msg = 0, *sql;
     rc = sqlite3_open("topmusic.db", &db);
     
     if (rc != SQLITE_OK) {
@@ -171,6 +170,29 @@ _Bool raspunde(void *arg)
     
     /*pregatim mesajul de raspuns */
     switch(nr) {
+        case 1:
+            read(tdL.cl, &information, sizeof(information));
+            token = strtok(information, "\n");
+            strcpy(user_name, token);
+            token = strtok(NULL, "\n");
+            strcpy(user_pass, token);
+            printf("username is %s\n", user_name);
+            printf("password is %s", user_pass);
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            sprintf(sql, "SELECT COUNT(*) FROM USERS WHERE User_Name = \'%s\' AND User_Pass = \'%s\';", user_name, user_pass);
+            break;
+
+        case 2:
+            read(tdL.cl, &information, sizeof(information));
+            token = strtok(information, "\n");
+            strcpy(user_name, token);
+            token = strtok(NULL, "\n");
+            strcpy(user_pass, token);
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            sprintf(sql, "INSERT INTO Users (User_Name, User_Pass) VALUES (\'%s\', \'%s\');", user_name, user_pass);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            break;
+
         case 3:
             sql = "SELECT COUNT(*) FROM Songs";
             rc = sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg); 
@@ -189,8 +211,11 @@ _Bool raspunde(void *arg)
                 sqlite3_close(db);
             }
             break;
+
         case 4:
             sql = "BLANK";
+            printf("This is your username %s", user_name);
+            printf("\nThis is your pass %s", user_pass);
             char genreName[50];
             read(tdL.cl, &genreName, sizeof(genreName));
             genreName[strlen(genreName) - 1] = '\0';
@@ -200,9 +225,10 @@ _Bool raspunde(void *arg)
             sprintf(sql, "SELECT * from SONGS where Genre LIKE \'%%%s%%\';", genreName);
             sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
             break;
+
         case 5:
             sql = "SELECT 'youtubelink' || ifnull(max(Song_ID) + 1, 1)  FROM Songs;";
-            char songName[50], songGenre[50], songDescription[200], youtubeLink[250], information[300], *token;
+            char songName[50], songGenre[50], songDescription[200], youtubeLink[250];
             sqlite3_exec(db, sql, callback_value_first_to_server, youtubeLink, &err_msg);
             read(tdL.cl, &information, sizeof(information));
             token = strtok(information,"\n");
@@ -211,7 +237,6 @@ _Bool raspunde(void *arg)
             strcpy(songDescription,token);
             token = strtok(NULL, "\n");
             strcpy(songGenre, token);
-            songDescription[strlen(songDescription)] = '\0';
             sql = (char *)malloc((1000+1)*sizeof(char));
             sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES,GENRE) VALUES (\'%s\',\'%s\',\'%s\',0,\'%s\');", songName, youtubeLink, songDescription, songGenre);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
@@ -224,6 +249,10 @@ _Bool raspunde(void *arg)
             Song_ID[strlen(Song_ID) -1] = '\0';
             sprintf(sql, "DELETE FROM SONGS WHERE Song_ID = %s;", Song_ID);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            break;
+
+        case 7:
+            
             break;
         default: 
            printf("User did not insert a valid number\n");
