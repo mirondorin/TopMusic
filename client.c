@@ -160,6 +160,21 @@ int main (int argc, char *argv[])
                 write(sd, &information, sizeof(information));
                 break;
 
+            case 8:
+                printf("Insert the ID of the song you would like to see the comments: ");
+                fgets(Song_ID, sizeof(Song_ID), stdin);
+                write(sd, &Song_ID, sizeof(Song_ID));
+                int comments_count;
+                read(sd, &buf, sizeof(buf));
+                comments_count = atoi(buf) * 2;
+                for(int i = 1; i <= comments_count; i++) {
+                    read(sd, &buf,sizeof(buf));
+                    write(sd, "1", 1);
+                    /* afisam mesajul primit */
+                    printf ("[client]Mesajul primit este: %s", buf);
+                    if (i % 2 == 0) printf("\n");
+                }
+                break;
             default:
                 printf("Invalid number\n");
         }
@@ -172,7 +187,7 @@ void listSongs(int sd)
 {
     char buf[1000];
     int lines_count;
-    read(sd, &buf,sizeof(buf));
+    read(sd, &buf, sizeof(buf));
     printf("buffer are valoarea %s\n",buf);
     lines_count = atoi(buf) * 6;
     printf("lines_count = %d\n",lines_count);
@@ -212,7 +227,9 @@ void printMenu()
     printf("5. Add Song\n");
     printf("6. Delete Song\n");
     printf("7. Comment on a song\n");
-    printf("8. Make admin\n");
+    printf("8. Show comments from a song\n");
+    printf("9. Like a song\n");
+    printf("10. Make admin\n");
     printf("\nEnter the number for your desired command: ");
     fflush(stdout);
 }

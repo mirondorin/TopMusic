@@ -263,6 +263,16 @@ _Bool raspunde(void *arg)
             sprintf(sql, "INSERT INTO COMMENTS (User_Comment, User_ID, Song_ID) VALUES (\'%s\', %d, \'%s\');", comment, user_ID, Song_ID);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
+
+        case 8:
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            read(tdL.cl, &Song_ID, sizeof(Song_ID));
+            Song_ID[strlen(Song_ID) -1] = '\0';
+            sprintf(sql, "SELECT COUNT(*) from Comments where Song_ID = %s;", Song_ID);
+            sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg);
+            sprintf(sql, "SELECT User_Name,User_Comment from Users U JOIN Comments C ON U.User_ID=C.User_ID WHERE Song_ID = %s;", Song_ID);
+            sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
+            break;
         default: 
            printf("User did not insert a valid number\n");
     }
@@ -281,7 +291,7 @@ void readFromClient(int socketDescriptor, char *buf, int sizeBuffer){
 int callback(void *sd, int argc, char **argv, char **azColName) {
     int socketDescriptor = *((int *)sd);
     for (int i = 0; i < argc; i++) {
-        char buf[500];
+        char buf[1000];
         sprintf(buf ,"%s = %s\n", azColName[i], argv[i] ? argv[i] : " ");
         printf("Sent to %d: %s\n", socketDescriptor, buf);
         write(socketDescriptor, buf, sizeof(buf));
