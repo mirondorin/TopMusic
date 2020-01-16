@@ -159,8 +159,8 @@ _Bool raspunde(void *arg)
     }
 	printf ("[Thread %d]Mesajul a fost receptionat...%d\n",tdL.idThread, nr);
     
-    char user_name[50], user_pass[50], user_type[50], information[300], Song_ID[100], *token, *err_msg = 0, *sql;
-    int user_ID = 3;
+    char user_name[50], user_pass[50], user_ID[10], user_type[50], user_vote[2], information[300], Song_ID[100], *token, *err_msg = 0, *sql;
+    char tmp_user_name[50], tmp_user_pass[50], tmp_user_ID[10];
     rc = sqlite3_open("topmusic.db", &db);
     
     if (rc != SQLITE_OK) {
@@ -173,19 +173,28 @@ _Bool raspunde(void *arg)
     switch(nr) {
         case 1:
             read(tdL.cl, &information, sizeof(information));
+            char userFound[2];
             token = strtok(information, "\n");
-            strcpy(user_name, token);
+            strcpy(tmp_user_name, token);
             token = strtok(NULL, "\n");
-            strcpy(user_pass, token);
-            printf("username is %s\n", user_name);
-            printf("password is %s", user_pass);
+            strcpy(tmp_user_pass, token);
             sql = (char *)malloc((1000+1)*sizeof(char));
-            sprintf(sql, "SELECT COUNT(*) FROM USERS WHERE User_Name = \'%s\' AND User_Pass = \'%s\';", user_name, user_pass);
+            sprintf(sql, "SELECT COUNT(*) FROM USERS WHERE User_Name = \'%s\' AND User_Pass = \'%s\';", tmp_user_name, tmp_user_pass);
+            sqlite3_exec(db, sql, callback_value_first_to_server, userFound, &err_msg);
+            if(atoi(userFound) == 1) {
+                strcpy(user_name, tmp_user_name);
+                strcpy(user_pass, tmp_user_pass);
+                sprintf(sql, "SELECT User_ID from Users WHERE User_Name = \'%s\';", user_name);
+                sqlite3_exec(db, sql, callback_value_first_to_server, user_ID, &err_msg);
+                sprintf(sql, "SELECT User_Type FROM Users WHERE User_ID = %s;", user_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, user_type, &err_msg);
+                sprintf(sql, "SELECT User_Vote FROM Users WHERE User_ID = %s;", user_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, user_vote, &err_msg);
+            }
             break;
 
         case 2:
             read(tdL.cl, &information, sizeof(information));
-            char tmp_user_name[50], tmp_user_pass[50];
             token = strtok(information, "\n");
             strcpy(tmp_user_name, token);
             token = strtok(NULL, "\n");
@@ -260,7 +269,7 @@ _Bool raspunde(void *arg)
             strcpy(Song_ID, token);
             token = strtok(NULL, "\n");
             strcpy(comment, token);
-            sprintf(sql, "INSERT INTO COMMENTS (User_Comment, User_ID, Song_ID) VALUES (\'%s\', %d, \'%s\');", comment, user_ID, Song_ID);
+            sprintf(sql, "INSERT INTO COMMENTS (User_Comment, User_ID, Song_ID) VALUES (\'%s\',%d,\'%s\');", comment, atoi(user_ID), Song_ID);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
             break;
 
@@ -273,6 +282,33 @@ _Bool raspunde(void *arg)
             sprintf(sql, "SELECT User_Name,User_Comment from Users U JOIN Comments C ON U.User_ID=C.User_ID WHERE Song_ID = %s;", Song_ID);
             sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
             break;
+
+        case 9:
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            read(tdL.cl, &Song_ID, sizeof(Song_ID));
+            Song_ID[strlen(Song_ID) -1] = '\0';
+            sprintf(sql, "UPDATE Songs SET Likes = Likes + 1 WHERE Song_ID = %s;", Song_ID);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            sprintf(sql, "INSERT INTO User_Likes (User_ID, Song_ID) VALUES (%d, %s);", atoi(user_ID), Song_ID);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            break;
+
+        case 10:
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            read(tdL.cl, &tmp_user_ID, sizeof(tmp_user_ID));
+            tmp_user_ID[strlen(tmp_user_ID) - 1] = '\0';
+            sprintf(sql, "UPDATE Users SET User_Vote = (User_Vote + 1)%%2 WHERE User_ID = %s;", tmp_user_ID);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            break;
+        
+        case 11:
+            sql = (char *)malloc((1000+1)*sizeof(char));
+            read(tdL.cl, &tmp_user_ID, sizeof(tmp_user_ID));
+            tmp_user_ID[strlen(tmp_user_ID) - 1] = '\0';
+            sprintf(sql, "UPDATE Users SET User_Type = 'admin' WHERE User_ID = %s;", tmp_user_ID);
+            sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+            break;
+
         default: 
            printf("User did not insert a valid number\n");
     }

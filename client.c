@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
   struct sockaddr_in server;	// structura folosita pentru conectare 
   		// mesajul trimis
   int nr=0, iterations = 1000;
-  char buf[1000], user_name[50], user_pass[50], temp_user[300], Song_ID[100], information[300];
+  char buf[1000], user_name[50], user_pass[50], user_ID[10], temp_user[300], Song_ID[100], information[300];
 
   /* exista toate argumentele in linia de comanda? */
   if (argc != 3)
@@ -175,6 +175,25 @@ int main (int argc, char *argv[])
                     if (i % 2 == 0) printf("\n");
                 }
                 break;
+
+            case 9:
+                printf("Insert the ID of the song you would like to upvote: ");
+                fgets(Song_ID, sizeof(Song_ID), stdin);
+                write(sd, &Song_ID, sizeof(Song_ID));
+                break;
+
+            case 10:
+                printf("Insert the ID of the user you would like to restrict from upvoting: ");
+                fgets(user_ID, sizeof(user_ID), stdin);
+                write(sd, &user_ID, sizeof(user_ID));
+                break;
+
+            case 11:
+                printf("Insert the ID of the user you would like to grant admin privileges: ");
+                fgets(user_ID, sizeof(Song_ID), stdin);
+                write(sd, &user_ID, sizeof(user_ID));
+                break;
+        
             default:
                 printf("Invalid number\n");
         }
@@ -229,7 +248,8 @@ void printMenu()
     printf("7. Comment on a song\n");
     printf("8. Show comments from a song\n");
     printf("9. Like a song\n");
-    printf("10. Make admin\n");
+    printf("10. Remove/Grant user's right to vote\n");
+    printf("11. Make admin\n");
     printf("\nEnter the number for your desired command: ");
     fflush(stdout);
 }
