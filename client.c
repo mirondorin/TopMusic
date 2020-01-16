@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
   int sd;			// descriptorul de socket
   struct sockaddr_in server;	// structura folosita pentru conectare 
   		// mesajul trimis
-  int nr=0, iterations = 1000;
+  int nr=0, success;
   char buf[1000], user_name[50], user_pass[50], user_ID[10], temp_user[300], Song_ID[100], information[300];
 
   /* exista toate argumentele in linia de comanda? */
@@ -108,90 +108,144 @@ int main (int argc, char *argv[])
                 break;
 
             case 3:
-                listSongs(sd);
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    listSongs(sd);
+                }
+                else {
+                    printf("You must be logged in to use this command\n\n");
+                }
                 break;
 
             case 4:
-                printf("What genre of songs would you like to see: ");
-                char genreName[50],tmp_buf[1000];
-                fgets(genreName, sizeof(genreName), stdin);
-                write(sd, &genreName, sizeof(genreName));
-                int lines_count;
-                read(sd, &tmp_buf, sizeof(tmp_buf));
-                lines_count = atoi(tmp_buf) * 6;
-                printf("lines_count este = %d\n", lines_count);
-                for(int i = 1; i <= lines_count; i++) {
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("What genre of songs would you like to see: ");
+                    char genreName[50],tmp_buf[1000];
+                    fgets(genreName, sizeof(genreName), stdin);
+                    write(sd, &genreName, sizeof(genreName));
+                    int lines_count;
                     read(sd, &tmp_buf, sizeof(tmp_buf));
-                    write(sd, "1", 1);
-                    /* afisam mesajul primit */
-                    printf ("[client]Mesajul primit este: %s", tmp_buf);
-                    if (i % 6 == 0) printf("\n");
+                    lines_count = atoi(tmp_buf) * 6;
+                    printf("lines_count este = %d\n", lines_count);
+                    for(int i = 1; i <= lines_count; i++) {
+                        read(sd, &tmp_buf, sizeof(tmp_buf));
+                        write(sd, "1", 1);
+                        /* afisam mesajul primit */
+                        printf ("[client]Mesajul primit este: %s", tmp_buf);
+                        if (i % 6 == 0) printf("\n");
+                    }
+                }
+                else {
+                    printf("You must be logged in to use this command\n\n");
                 }
                 break;
 
             case 5:
-                printf("Insert a name for the song: ");
-                char name[50], genre[50], description[200], *token;
-                fgets(name, sizeof(name), stdin);
-                printf("Insert a description for the song: ");
-                fgets(description, sizeof(description), stdin);
-                printf("\nInsert a genre for the song: ");
-                fgets(genre, sizeof(genre), stdin);
-                strcpy(information, name);
-                strncpy(information + strlen(information), description, strlen(description) + 1);
-                strncpy(information + strlen(information), genre, strlen(genre) + 1);
-                write(sd, &information, sizeof(information));   
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("Insert a name for the song: ");
+                    char name[50], genre[50], description[200], *token;
+                    fgets(name, sizeof(name), stdin);
+                    printf("Insert a description for the song: ");
+                    fgets(description, sizeof(description), stdin);
+                    printf("Insert a genre for the song: ");
+                    fgets(genre, sizeof(genre), stdin);
+                    strcpy(information, name);
+                    strncpy(information + strlen(information), description, strlen(description) + 1);
+                    strncpy(information + strlen(information), genre, strlen(genre) + 1);
+                    write(sd, &information, sizeof(information));
+                } 
+                else {
+                    printf("You must be logged in to use this command\n\n");
+                }
                 break;
 
             case 6:
-                printf("Insert the ID of the song you would like to delete: ");
-                fgets(Song_ID, sizeof(Song_ID), stdin);
-                write(sd, &Song_ID, sizeof(Song_ID));
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("Insert the ID of the song you would like to delete: ");
+                    fgets(Song_ID, sizeof(Song_ID), stdin);
+                    write(sd, &Song_ID, sizeof(Song_ID));
+                }
+                else {
+                    printf("You must be logged in AND be an admin to use this command\n\n");
+                }
                 break;
 
             case 7:
-                printf("Insert the ID of the song you would like to comment on: ");
-                fgets(Song_ID, sizeof(Song_ID), stdin);
-                printf("Comment: ");
-                char comment[200];
-                fgets(comment, sizeof(comment), stdin);
-                strcpy(information, Song_ID);
-                strncpy(information + strlen(information), comment, strlen(comment) + 1);
-                write(sd, &information, sizeof(information));
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("Insert the ID of the song you would like to comment on: ");
+                    fgets(Song_ID, sizeof(Song_ID), stdin);
+                    printf("Comment: ");
+                    char comment[200];
+                    fgets(comment, sizeof(comment), stdin);
+                    strcpy(information, Song_ID);
+                    strncpy(information + strlen(information), comment, strlen(comment) + 1);
+                    write(sd, &information, sizeof(information));
+                }
+                else {
+                    printf("You must be logged in to use this command\n\n");
+                }
                 break;
 
             case 8:
-                printf("Insert the ID of the song you would like to see the comments: ");
-                fgets(Song_ID, sizeof(Song_ID), stdin);
-                write(sd, &Song_ID, sizeof(Song_ID));
-                int comments_count;
-                read(sd, &buf, sizeof(buf));
-                comments_count = atoi(buf) * 2;
-                for(int i = 1; i <= comments_count; i++) {
-                    read(sd, &buf,sizeof(buf));
-                    write(sd, "1", 1);
-                    /* afisam mesajul primit */
-                    printf ("[client]Mesajul primit este: %s", buf);
-                    if (i % 2 == 0) printf("\n");
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("Insert the ID of the song you would like to see the comments: ");
+                    fgets(Song_ID, sizeof(Song_ID), stdin);
+                    write(sd, &Song_ID, sizeof(Song_ID));
+                    int comments_count;
+                    read(sd, &buf, sizeof(buf));
+                    comments_count = atoi(buf) * 2;
+                    for(int i = 1; i <= comments_count; i++) {
+                        read(sd, &buf,sizeof(buf));
+                        write(sd, "1", 1);
+                        /* afisam mesajul primit */
+                        printf ("[client]Mesajul primit este: %s", buf);
+                        if (i % 2 == 0) printf("\n");
+                    }
+                }
+                else {
+                    printf("You must be logged in to use this command\n\n");
                 }
                 break;
 
             case 9:
-                printf("Insert the ID of the song you would like to upvote: ");
-                fgets(Song_ID, sizeof(Song_ID), stdin);
-                write(sd, &Song_ID, sizeof(Song_ID));
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("Insert the ID of the song you would like to upvote: ");
+                    fgets(Song_ID, sizeof(Song_ID), stdin);
+                    write(sd, &Song_ID, sizeof(Song_ID));
+                }
+                else {
+                    printf("You must be logged in to use this command\n\n");
+                }
                 break;
 
             case 10:
-                printf("Insert the ID of the user you would like to restrict from upvoting: ");
-                fgets(user_ID, sizeof(user_ID), stdin);
-                write(sd, &user_ID, sizeof(user_ID));
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("Insert the ID of the user you would like to restrict from upvoting: ");
+                    fgets(user_ID, sizeof(user_ID), stdin);
+                    write(sd, &user_ID, sizeof(user_ID));
+                }
+                else {
+                    printf("You must be logged in AND be an admin to use this command\n\n");
+                }
                 break;
 
             case 11:
-                printf("Insert the ID of the user you would like to grant admin privileges: ");
-                fgets(user_ID, sizeof(Song_ID), stdin);
-                write(sd, &user_ID, sizeof(user_ID));
+                read(sd, &success, sizeof(success));
+                if(success) {
+                    printf("Insert the ID of the user you would like to grant admin privileges: ");
+                    fgets(user_ID, sizeof(Song_ID), stdin);
+                    write(sd, &user_ID, sizeof(user_ID));
+                }
+                else {
+                    printf("You must be logged in AND be an admin to use this command\n\n");
+                }
                 break;
         
             default:
