@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -222,14 +223,20 @@ _Bool raspunde(void *arg)
                 strcpy(tmp_user_name, token);
             }
             else {
+                success = -1;
+                write(tdL.cl, &success, sizeof(success));
                 break;
             }
 
             token = strtok(NULL, "\n");
             if(token != NULL) {
                 strcpy(tmp_user_pass, token);
+                success = 1;
+                write(tdL.cl, &success, sizeof(success));
             }
             else {
+                success = -1;
+                write(tdL.cl, &success, sizeof(success));
                 break;
             }
             sql = (char *)malloc((1000+1)*sizeof(char));
@@ -296,6 +303,8 @@ _Bool raspunde(void *arg)
                     strcpy(songName, token);
                 }
                 else {
+                    success = -1;
+                    write(tdL.cl, &success, sizeof(success));
                     break;
                 }
 
@@ -304,14 +313,20 @@ _Bool raspunde(void *arg)
                     strcpy(songDescription,token);
                 }
                 else {
+                    success = -1;
+                    write(tdL.cl, &success, sizeof(success));
                     break;
                 }
 
                 token = strtok(NULL, "\n");
                 if(token != NULL) {
+                    success = 1;
+                    write(tdL.cl, &success, sizeof(success));
                     strcpy(songGenre, token);
                 }
                 else {
+                    success = -1;
+                    write(tdL.cl, &success, sizeof(success));
                     break;
                 }
                 sql = (char *)malloc((1000+1)*sizeof(char));
@@ -331,8 +346,30 @@ _Bool raspunde(void *arg)
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 read(tdL.cl, &Song_ID, sizeof(Song_ID));
                 Song_ID[strlen(Song_ID) -1] = '\0';
-                sprintf(sql, "DELETE FROM SONGS WHERE Song_ID = %s;", Song_ID);
-                sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                sprintf(sql, "SELECT COUNT(Song_ID) FROM SONGS WHERE Song_ID = %s;", Song_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, information, &err_msg);
+                for(int i = 0; i < strlen(Song_ID); i++) {
+                    if(isalpha(Song_ID[i]) != 0) {
+                        success = -1;
+                        break;
+                    }
+                }
+                if(success == -1) {
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+                else {
+                    success = atoi(information);
+                }
+
+                if(success == 1) {
+                    sprintf(sql, "DELETE FROM SONGS WHERE Song_ID = %s;", Song_ID);
+                    sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                    write(tdL.cl, &success, sizeof(success));
+                }
+                else if (success == 0) {
+                    write(tdL.cl, &success, sizeof(success));
+                }
             }
             else {
                 success = 0;

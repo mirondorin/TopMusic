@@ -175,6 +175,15 @@ int main (int argc, char *argv[])
                     strncpy(information + strlen(information), description, strlen(description) + 1);
                     strncpy(information + strlen(information), genre, strlen(genre) + 1);
                     write(sd, &information, sizeof(information));
+                    int songAdded;
+                    read(sd, &songAdded, sizeof(songAdded));
+                    if(songAdded == 1) {
+                        printf("You have successfully added the song\n");
+                    }
+                    else if(songAdded == -1){
+                        printf("Error adding song.\n");
+                    }
+                    
                 } 
                 else {
                     printf("You must be logged in to use this command\n\n");
@@ -187,6 +196,17 @@ int main (int argc, char *argv[])
                     printf("Insert the ID of the song you would like to delete: ");
                     fgets(Song_ID, sizeof(Song_ID), stdin);
                     write(sd, &Song_ID, sizeof(Song_ID));
+                    int songDeleted;
+                    read(sd, &songDeleted, sizeof(songDeleted));
+                    if(songDeleted == 1) {
+                        printf("Song successfully deleted.\n");
+                    }
+                    else if(songDeleted == 0){
+                        printf("Song not found.\n");
+                    }
+                    else if(songDeleted == -1) {
+                        printf("Invalid Song_ID.\n");
+                    }
                 }
                 else {
                     printf("You must be logged in AND be an admin to use this command\n\n");
@@ -204,6 +224,17 @@ int main (int argc, char *argv[])
                     strcpy(information, Song_ID);
                     strncpy(information + strlen(information), comment, strlen(comment) + 1);
                     write(sd, &information, sizeof(information));
+                    int commentAdded;
+                    read(sd, &commentAdded, sizeof(commentAdded));
+                    if(commentAdded == 1) {
+                        printf("Comment successfully added.\n");
+                    }
+                    else if(commentAdded == 0){
+                        printf("Song not found.\n");
+                    }
+                    else {
+                        printf("You must insert a valid comment\n");
+                    }
                 }
                 else {
                     printf("You must be logged in to use this command\n\n");
@@ -238,6 +269,17 @@ int main (int argc, char *argv[])
                     printf("Insert the ID of the song you would like to upvote: ");
                     fgets(Song_ID, sizeof(Song_ID), stdin);
                     write(sd, &Song_ID, sizeof(Song_ID));
+                    int songUpvoted;
+                    read(sd, &songUpvoted, sizeof(songUpvoted));
+                    if(songUpvoted == 1) {
+                        printf("Song successfully upvoted.\n");
+                    }
+                    else if(songUpvoted == 0){
+                        printf("Song not found.\n");
+                    }
+                    else {
+                        printf("You must insert a valid song id\n");
+                    }
                 }
                 else {
                     printf("You must be logged in to use this command\n\n");
@@ -250,6 +292,17 @@ int main (int argc, char *argv[])
                     printf("Insert the ID of the user you would like to restrict from upvoting: ");
                     fgets(user_ID, sizeof(user_ID), stdin);
                     write(sd, &user_ID, sizeof(user_ID));
+                    int userRestricted;
+                    read(sd, &userRestricted, sizeof(userRestricted));
+                    if(userRestricted == 1) {
+                        printf("User upvoting successfully restricted.\n");
+                    }
+                    else if(userRestricted == 0){
+                        printf("User not found.\n");
+                    }
+                    else {
+                        printf("You must insert a valid user id\n");
+                    }
                 }
                 else {
                     printf("You must be logged in AND be an admin to use this command\n\n");
@@ -262,6 +315,17 @@ int main (int argc, char *argv[])
                     printf("Insert the ID of the user you would like to grant admin privileges: ");
                     fgets(user_ID, sizeof(Song_ID), stdin);
                     write(sd, &user_ID, sizeof(user_ID));
+                    int userAdmined;
+                    read(sd, &userAdmined, sizeof(userAdmined));
+                    if(userAdmined == 1) {
+                        printf("Admin privileges successfully granted.\n");
+                    }
+                    else if(userAdmined == 0){
+                        printf("User not found.\n");
+                    }
+                    else {
+                        printf("You must insert a valid user id\n");
+                    }
                 }
                 else {
                     printf("You must be logged in AND be an admin to use this command\n\n");
