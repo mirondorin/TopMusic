@@ -175,9 +175,21 @@ _Bool raspunde(void *arg)
             read(tdL.cl, &information, sizeof(information));
             char userFound[2];
             token = strtok(information, "\n");
-            strcpy(tmp_user_name, token);
+            if(token != NULL) {
+                strcpy(tmp_user_name, token);
+            }
+            else {
+                break;
+            }
+
             token = strtok(NULL, "\n");
-            strcpy(tmp_user_pass, token);
+            if(token != NULL) {
+                strcpy(tmp_user_pass, token);
+            }
+            else {
+                break;
+            }
+
             sql = (char *)malloc((1000+1)*sizeof(char));
             sprintf(sql, "SELECT COUNT(*) FROM USERS WHERE User_Name = \'%s\' AND User_Pass = \'%s\';", tmp_user_name, tmp_user_pass);
             sqlite3_exec(db, sql, callback_value_first_to_server, userFound, &err_msg);
@@ -196,9 +208,20 @@ _Bool raspunde(void *arg)
         case 2:
             read(tdL.cl, &information, sizeof(information));
             token = strtok(information, "\n");
-            strcpy(tmp_user_name, token);
+            if(token != NULL) {
+                strcpy(tmp_user_name, token);
+            }
+            else {
+                break;
+            }
+
             token = strtok(NULL, "\n");
-            strcpy(tmp_user_pass, token);
+            if(token != NULL) {
+                strcpy(tmp_user_pass, token);
+            }
+            else {
+                break;
+            }
             sql = (char *)malloc((1000+1)*sizeof(char));
             sprintf(sql, "INSERT INTO Users (User_Name, User_Pass) VALUES (\'%s\', \'%s\');", tmp_user_name, tmp_user_pass);
             sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
@@ -315,9 +338,21 @@ _Bool raspunde(void *arg)
                 char comment[200], songFound[2];
                 read(tdL.cl, &information, sizeof(information));
                 token = strtok(information, "\n");
-                strcpy(Song_ID, token);
+                if(token != NULL) {
+                    strcpy(Song_ID, token);
+                }
+                else {
+                    break;
+                }
+
                 token = strtok(NULL, "\n");
-                strcpy(comment, token);
+                if(token != NULL) {
+                    strcpy(comment, token);
+                }
+                else {
+                    break;
+                }
+
                 sprintf(sql, "SELECT COUNT(*) FROM Songs WHERE Song_ID = %s;", Song_ID);
                 sqlite3_exec(db, sql, callback_value_first_to_server, songFound, &err_msg);
                 if(strcmp(songFound, "1") == 0) {
@@ -338,10 +373,15 @@ _Bool raspunde(void *arg)
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 read(tdL.cl, &Song_ID, sizeof(Song_ID));
                 Song_ID[strlen(Song_ID) -1] = '\0';
-                sprintf(sql, "SELECT COUNT(*) from Comments where Song_ID = %s;", Song_ID);
-                sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg);
-                sprintf(sql, "SELECT User_Name,User_Comment from Users U JOIN Comments C ON U.User_ID=C.User_ID WHERE Song_ID = %s;", Song_ID);
-                sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
+                if(strlen(Song_ID)) {
+                    sprintf(sql, "SELECT COUNT(*) from Comments where Song_ID = %s;", Song_ID);
+                    sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg);
+                    sprintf(sql, "SELECT User_Name,User_Comment from Users U JOIN Comments C ON U.User_ID=C.User_ID WHERE Song_ID = %s;", Song_ID);
+                    sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
+                }
+                else {
+                    write(tdL.cl, "0", 1000);
+                }
             }
             else {
                 success = 0;
