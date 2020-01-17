@@ -179,6 +179,8 @@ _Bool raspunde(void *arg)
                 strcpy(tmp_user_name, token);
             }
             else {
+                success = -1;
+                write(tdL.cl, &success, sizeof(success));
                 break;
             }
 
@@ -187,6 +189,8 @@ _Bool raspunde(void *arg)
                 strcpy(tmp_user_pass, token);
             }
             else {
+                success = -1;
+                write(tdL.cl, &success, sizeof(success));
                 break;
             }
 
@@ -202,6 +206,12 @@ _Bool raspunde(void *arg)
                 sqlite3_exec(db, sql, callback_value_first_to_server, user_type, &err_msg);
                 sprintf(sql, "SELECT User_Vote FROM Users WHERE User_ID = %s;", user_ID);
                 sqlite3_exec(db, sql, callback_value_first_to_server, user_vote, &err_msg);
+                success = 1;
+                write(tdL.cl, &success, sizeof(success));
+            }
+            else {
+                success = 0;
+                write(tdL.cl, &success, sizeof(success));
             }
             break;
 

@@ -95,6 +95,16 @@ int main (int argc, char *argv[])
                 strcpy(temp_user, user_name);
                 strncpy(temp_user + strlen(temp_user), user_pass, strlen(user_pass) + 1);
                 write(sd, &temp_user, sizeof(temp_user));
+                read(sd, &success, sizeof(success));
+                if(success == 1) {
+                    printf("You have logged in successfully\n");
+                }
+                else if(success == 0){
+                    printf("User has not been found\n");
+                }
+                else {
+                    printf("You can't leave username/password field blank\n");
+                }
                 break;
 
             case 2:
@@ -105,6 +115,16 @@ int main (int argc, char *argv[])
                 strcpy(temp_user, user_name);
                 strncpy(temp_user + strlen(temp_user), user_pass, strlen(user_pass) + 1);
                 write(sd, &temp_user, sizeof(temp_user));
+                read(sd, &success, sizeof(success));
+                if(success == 1) {
+                    printf("You have successfully registered\n");
+                }
+                else if(success == 0){
+                    printf("Register failed.\n");
+                }
+                else {
+                    printf("You can't leave username/password field blank\n");
+                }
                 break;
 
             case 3:
@@ -292,7 +312,7 @@ void writeToServer(int socketDescriptor,char *buf, int sizeBuffer){
 
 void printMenu()
 {
-    printf("Here's a list of the available commands: \n");
+    printf("\nHere's a list of the available commands: \n");
     printf("1. Login\n");
     printf("2. Register\n");
     printf("3. List Songs\n");
