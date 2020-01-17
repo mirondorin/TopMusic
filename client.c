@@ -230,7 +230,7 @@ int main (int argc, char *argv[])
                         printf("Comment successfully added.\n");
                     }
                     else if(commentAdded == 0){
-                        printf("Song not found.\n");
+                        printf("Song not found. Insert a valid song id.\n");
                     }
                     else {
                         printf("You must insert a valid comment\n");
@@ -247,15 +247,26 @@ int main (int argc, char *argv[])
                     printf("Insert the ID of the song you would like to see the comments: ");
                     fgets(Song_ID, sizeof(Song_ID), stdin);
                     write(sd, &Song_ID, sizeof(Song_ID));
-                    int comments_count;
-                    read(sd, &buf, sizeof(buf));
-                    comments_count = atoi(buf) * 2;
-                    for(int i = 1; i <= comments_count; i++) {
-                        read(sd, &buf,sizeof(buf));
-                        write(sd, "1", 1);
-                        /* afisam mesajul primit */
-                        printf ("[client]Mesajul primit este: %s", buf);
-                        if (i % 2 == 0) printf("\n");
+                    int comments_count, songFound;
+                    read(sd, &songFound, sizeof(songFound));
+                    if(songFound == -1) {
+                        printf("You must insert a valid song id\n");
+                        break;
+                    }
+                    else if(songFound == 0) {
+                        printf("Song not found\n");
+                        break;
+                    }
+                    else {
+                        read(sd, &buf, sizeof(buf));
+                        comments_count = atoi(buf) * 2;
+                        for(int i = 1; i <= comments_count; i++) {
+                            read(sd, &buf,sizeof(buf));
+                            write(sd, "1", 1);
+                            /* afisam mesajul primit */
+                            printf ("[client]Mesajul primit este: %s", buf);
+                            if (i % 2 == 0) printf("\n");
+                        }
                     }
                 }
                 else {
@@ -289,7 +300,7 @@ int main (int argc, char *argv[])
             case 10:
                 read(sd, &success, sizeof(success));
                 if(success) {
-                    printf("Insert the ID of the user you would like to restrict from upvoting: ");
+                    printf("Insert the ID of the user you would like to restrict/grant upvoting rights: ");
                     fgets(user_ID, sizeof(user_ID), stdin);
                     write(sd, &user_ID, sizeof(user_ID));
                     int userRestricted;
@@ -301,7 +312,7 @@ int main (int argc, char *argv[])
                         printf("User not found.\n");
                     }
                     else {
-                        printf("You must insert a valid user id\n");
+                        printf("You must insert a valid user id.\n");
                     }
                 }
                 else {

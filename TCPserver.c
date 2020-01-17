@@ -161,7 +161,7 @@ _Bool raspunde(void *arg)
 	printf ("[Thread %d]Mesajul a fost receptionat...%d\n",tdL.idThread, nr);
     
     char user_name[50], user_pass[50], user_ID[10], user_type[50], user_vote[2], information[300], Song_ID[100], *token, *err_msg = 0, *sql;
-    char tmp_user_name[50], tmp_user_pass[50], tmp_user_ID[10];
+    char tmp_user_name[50], tmp_user_pass[50], tmp_user_ID[10], songFound[2];
     rc = sqlite3_open("topmusic.db", &db);
     
     if (rc != SQLITE_OK) {
@@ -382,13 +382,26 @@ _Bool raspunde(void *arg)
                 success = 1;
                 write(tdL.cl, &success, sizeof(success));
                 sql = (char *)malloc((1000+1)*sizeof(char));
-                char comment[200], songFound[2];
+                char comment[200];
                 read(tdL.cl, &information, sizeof(information));
                 token = strtok(information, "\n");
                 if(token != NULL) {
                     strcpy(Song_ID, token);
                 }
                 else {
+                    success = 0;
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+
+                for(int i = 0; i < strlen(Song_ID); i++) {
+                    if(isalpha(Song_ID[i]) != 0) {
+                        success = 0;
+                        break;
+                    }
+                }
+                if(success == 0) {
+                    write(tdL.cl, &success, sizeof(success));
                     break;
                 }
 
@@ -397,14 +410,18 @@ _Bool raspunde(void *arg)
                     strcpy(comment, token);
                 }
                 else {
+                    success = -1;
+                    write(tdL.cl, &success, sizeof(success));
                     break;
                 }
 
                 sprintf(sql, "SELECT COUNT(*) FROM Songs WHERE Song_ID = %s;", Song_ID);
                 sqlite3_exec(db, sql, callback_value_first_to_server, songFound, &err_msg);
                 if(strcmp(songFound, "1") == 0) {
+                    success = 1;
                     sprintf(sql, "INSERT INTO COMMENTS (User_Comment, User_ID, Song_ID) VALUES (\'%s\',%d,\'%s\');", comment, atoi(user_ID), Song_ID);
                     sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                    write(tdL.cl, &success, sizeof(success));
                 }
             }
             else {
@@ -420,13 +437,36 @@ _Bool raspunde(void *arg)
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 read(tdL.cl, &Song_ID, sizeof(Song_ID));
                 Song_ID[strlen(Song_ID) -1] = '\0';
+
+                for(int i = 0; i < strlen(Song_ID); i++) {
+                    if(isalpha(Song_ID[i]) != 0) {
+                        success = -1;
+                        break;
+                    }
+                }
+                if(success == -1) {
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+
+                sprintf(sql, "SELECT COUNT(*) FROM Songs WHERE Song_ID = %s;", Song_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, songFound, &err_msg);
+
+                if(strcmp(songFound,"0") == 0) {
+                    success = 0;
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+
                 if(strlen(Song_ID)) {
+                    write(tdL.cl, &success, sizeof(success));
                     sprintf(sql, "SELECT COUNT(*) from Comments where Song_ID = %s;", Song_ID);
                     sqlite3_exec(db, sql, callback_send_first_to_client, &tdL.cl, &err_msg);
                     sprintf(sql, "SELECT User_Name,User_Comment from Users U JOIN Comments C ON U.User_ID=C.User_ID WHERE Song_ID = %s;", Song_ID);
                     sqlite3_exec(db, sql, callback, &tdL.cl, &err_msg);
                 }
                 else {
+                    write(tdL.cl, &success, sizeof(success));
                     write(tdL.cl, "0", 1000);
                 }
             }
@@ -444,6 +484,27 @@ _Bool raspunde(void *arg)
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 read(tdL.cl, &Song_ID, sizeof(Song_ID));
                 Song_ID[strlen(Song_ID) -1] = '\0';
+
+                for(int i = 0; i < strlen(Song_ID); i++) {
+                    if(isalpha(Song_ID[i]) != 0) {
+                        success = -1;
+                        break;
+                    }
+                }
+                if(success == -1) {
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+
+                sprintf(sql, "SELECT COUNT(*) FROM Songs WHERE Song_ID = %s;", Song_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, songFound, &err_msg);
+
+                if(strcmp(songFound,"0") == 0) {
+                    success = 0;
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+
                 sprintf(sql, "SELECT COUNT(*) FROM User_Likes WHERE User_ID = %s AND Song_ID = %s;", user_ID, Song_ID);
                 sqlite3_exec(db, sql, callback_value_first_to_server, userLiked, &err_msg);
                 if(strcmp(userLiked, "0") == 0) {
@@ -451,6 +512,11 @@ _Bool raspunde(void *arg)
                     sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
                     sprintf(sql, "INSERT INTO User_Likes (User_ID, Song_ID) VALUES (%d, %s);", atoi(user_ID), Song_ID);
                     sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                    write(tdL.cl, &success, sizeof(success));
+                }
+                else {
+                    success = 0;
+                    write(tdL.cl, &success, sizeof(success));
                 }
             }
             else {
@@ -466,8 +532,30 @@ _Bool raspunde(void *arg)
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 read(tdL.cl, &tmp_user_ID, sizeof(tmp_user_ID));
                 tmp_user_ID[strlen(tmp_user_ID) - 1] = '\0';
-                sprintf(sql, "UPDATE Users SET User_Vote = (User_Vote + 1)%%2 WHERE User_ID = %s;", tmp_user_ID);
-                sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+
+                for(int i = 0; i < strlen(tmp_user_ID); i++) {
+                    if(isalpha(tmp_user_ID[i]) != 0) {
+                        success = -1;
+                        break;
+                    }
+                }
+                if(success == -1) {
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+
+                sprintf(sql, "SELECT COUNT(User_ID) FROM Users WHERE User_ID = %s;", tmp_user_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, information, &err_msg);
+                success = atoi(information);
+                if(success == 0) {
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+                else {
+                    sprintf(sql, "UPDATE Users SET User_Vote = (User_Vote + 1)%%2 WHERE User_ID = %s;", tmp_user_ID);
+                    sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                    write(tdL.cl, &success, sizeof(success));
+                }
             }
             else {
                 success = 0;
@@ -482,8 +570,30 @@ _Bool raspunde(void *arg)
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 read(tdL.cl, &tmp_user_ID, sizeof(tmp_user_ID));
                 tmp_user_ID[strlen(tmp_user_ID) - 1] = '\0';
-                sprintf(sql, "UPDATE Users SET User_Type = 'admin' WHERE User_ID = %s;", tmp_user_ID);
-                sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+
+                for(int i = 0; i < strlen(tmp_user_ID); i++) {
+                    if(isalpha(tmp_user_ID[i]) != 0) {
+                        success = -1;
+                        break;
+                    }
+                }
+                if(success == -1) {
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+
+                sprintf(sql, "SELECT COUNT(User_ID) FROM Users WHERE User_ID = %s;", tmp_user_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, information, &err_msg);
+                success = atoi(information);
+                if(success == 0) {
+                    write(tdL.cl, &success, sizeof(success));
+                    break;
+                }
+                else {
+                    sprintf(sql, "UPDATE Users SET User_Type = 'admin' WHERE User_ID = %s;", tmp_user_ID);
+                    sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                    write(tdL.cl, &success, sizeof(success));
+                }
             }
             else {
                 success = 0;
