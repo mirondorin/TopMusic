@@ -259,11 +259,28 @@ _Bool raspunde(void *arg)
                 sqlite3_exec(db, sql, callback_value_first_to_server, youtubeLink, &err_msg);
                 read(tdL.cl, &information, sizeof(information));
                 token = strtok(information,"\n");
-                strcpy(songName, token);
+                if(token != NULL) {
+                    strcpy(songName, token);
+                }
+                else {
+                    break;
+                }
+
                 token = strtok(NULL, "\n");
-                strcpy(songDescription,token);
+                if(token != NULL) {
+                    strcpy(songDescription,token);
+                }
+                else {
+                    break;
+                }
+
                 token = strtok(NULL, "\n");
-                strcpy(songGenre, token);
+                if(token != NULL) {
+                    strcpy(songGenre, token);
+                }
+                else {
+                    break;
+                }
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 sprintf(sql, "INSERT INTO SONGS (NAME,LINK,DESCRIPTION,LIKES,GENRE) VALUES (\'%s\',\'%s\',\'%s\',0,\'%s\');", songName, youtubeLink, songDescription, songGenre);
                 sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
@@ -295,14 +312,18 @@ _Bool raspunde(void *arg)
                 success = 1;
                 write(tdL.cl, &success, sizeof(success));
                 sql = (char *)malloc((1000+1)*sizeof(char));
-                char comment[200];
+                char comment[200], songFound[2];
                 read(tdL.cl, &information, sizeof(information));
                 token = strtok(information, "\n");
                 strcpy(Song_ID, token);
                 token = strtok(NULL, "\n");
                 strcpy(comment, token);
-                sprintf(sql, "INSERT INTO COMMENTS (User_Comment, User_ID, Song_ID) VALUES (\'%s\',%d,\'%s\');", comment, atoi(user_ID), Song_ID);
-                sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                sprintf(sql, "SELECT COUNT(*) FROM Songs WHERE Song_ID = %s;", Song_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, songFound, &err_msg);
+                if(strcmp(songFound, "1") == 0) {
+                    sprintf(sql, "INSERT INTO COMMENTS (User_Comment, User_ID, Song_ID) VALUES (\'%s\',%d,\'%s\');", comment, atoi(user_ID), Song_ID);
+                    sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                }
             }
             else {
                 success = 0;
@@ -331,14 +352,19 @@ _Bool raspunde(void *arg)
         case 9:
             if(strcmp(user_type, "normal") == 0 || strcmp(user_type, "admin") == 0) {
                 success = 1;
+                char userLiked[2];
                 write(tdL.cl, &success, sizeof(success));
                 sql = (char *)malloc((1000+1)*sizeof(char));
                 read(tdL.cl, &Song_ID, sizeof(Song_ID));
                 Song_ID[strlen(Song_ID) -1] = '\0';
-                sprintf(sql, "UPDATE Songs SET Likes = Likes + 1 WHERE Song_ID = %s;", Song_ID);
-                sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
-                sprintf(sql, "INSERT INTO User_Likes (User_ID, Song_ID) VALUES (%d, %s);", atoi(user_ID), Song_ID);
-                sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                sprintf(sql, "SELECT COUNT(*) FROM User_Likes WHERE User_ID = %s AND Song_ID = %s;", user_ID, Song_ID);
+                sqlite3_exec(db, sql, callback_value_first_to_server, userLiked, &err_msg);
+                if(strcmp(userLiked, "0") == 0) {
+                    sprintf(sql, "UPDATE Songs SET Likes = Likes + 1 WHERE Song_ID = %s;", Song_ID);
+                    sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                    sprintf(sql, "INSERT INTO User_Likes (User_ID, Song_ID) VALUES (%d, %s);", atoi(user_ID), Song_ID);
+                    sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+                }
             }
             else {
                 success = 0;
