@@ -170,6 +170,9 @@ _Bool raspunde(void *arg)
         sqlite3_close(db);
     }
     
+    sql = "PRAGMA foreign_keys = ON;";
+    sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
+
     /*pregatim mesajul de raspuns */
     switch(nr) {
         case 1:
@@ -507,7 +510,7 @@ _Bool raspunde(void *arg)
 
                 sprintf(sql, "SELECT COUNT(*) FROM User_Likes WHERE User_ID = %s AND Song_ID = %s;", user_ID, Song_ID);
                 sqlite3_exec(db, sql, callback_value_first_to_server, userLiked, &err_msg);
-                if(strcmp(userLiked, "0") == 0) {
+                if(strcmp(userLiked, "0") == 0 && strcmp(user_vote,"1") == 0) {
                     sprintf(sql, "UPDATE Songs SET Likes = Likes + 1 WHERE Song_ID = %s;", Song_ID);
                     sqlite3_exec(db, sql, callback_void, &tdL.cl, &err_msg);
                     sprintf(sql, "INSERT INTO User_Likes (User_ID, Song_ID) VALUES (%d, %s);", atoi(user_ID), Song_ID);
@@ -515,7 +518,7 @@ _Bool raspunde(void *arg)
                     write(tdL.cl, &success, sizeof(success));
                 }
                 else {
-                    success = 0;
+                    success = -2;
                     write(tdL.cl, &success, sizeof(success));
                 }
             }

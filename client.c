@@ -74,13 +74,11 @@ int main (int argc, char *argv[])
 		read (0, buf, sizeof(buf));
 		nr=atoi(buf);
 		//scanf("%d",&nr);
-		
-		printf("[client] Am citit %d\n",nr);
 
 		/* trimiterea mesajului la server */
 		if (write (sd,&nr,sizeof(int)) <= 0)
 		  {
-		    perror ("[client]Eroare la write() spre server.\n");
+		    perror ("Error at write() to server.\n");
 		    return errno;
 		  }
 
@@ -147,12 +145,11 @@ int main (int argc, char *argv[])
                     int lines_count;
                     read(sd, &tmp_buf, sizeof(tmp_buf));
                     lines_count = atoi(tmp_buf) * 6;
-                    printf("lines_count este = %d\n", lines_count);
                     for(int i = 1; i <= lines_count; i++) {
                         read(sd, &tmp_buf, sizeof(tmp_buf));
                         write(sd, "1", 1);
                         /* afisam mesajul primit */
-                        printf ("[client]Mesajul primit este: %s", tmp_buf);
+                        printf ("%s", tmp_buf);
                         if (i % 6 == 0) printf("\n");
                     }
                 }
@@ -264,7 +261,7 @@ int main (int argc, char *argv[])
                             read(sd, &buf,sizeof(buf));
                             write(sd, "1", 1);
                             /* afisam mesajul primit */
-                            printf ("[client]Mesajul primit este: %s", buf);
+                            printf ("%s", buf);
                             if (i % 2 == 0) printf("\n");
                         }
                     }
@@ -288,8 +285,11 @@ int main (int argc, char *argv[])
                     else if(songUpvoted == 0){
                         printf("Song not found.\n");
                     }
-                    else {
+                    else if(songUpvoted == -1){
                         printf("You must insert a valid song id\n");
+                    }
+                    else {
+                        printf("Your like permission has been restricted.\n");
                     }
                 }
                 else {
@@ -356,15 +356,14 @@ void listSongs(int sd)
     char buf[1000];
     int lines_count;
     read(sd, &buf, sizeof(buf));
-    printf("buffer are valoarea %s\n",buf);
+    printf("There is a total of %s songs\n\n",buf);
     lines_count = atoi(buf) * 6;
-    printf("lines_count = %d\n",lines_count);
     
     for(int i = 1; i <= lines_count; i++) {
         read(sd, &buf,sizeof(buf));
         write(sd, "1", 1);
         /* afisam mesajul primit */
-        printf ("[client]Mesajul primit este: %s", buf);
+        printf ("%s", buf);
         if (i % 6 == 0) printf("\n");
     }
 }
